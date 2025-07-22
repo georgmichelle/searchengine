@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+<head>
+    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <!-- 
+     Contact me
+     Website: georg-michelle.ct.ws
+     instagram: h1xzblu
+     WeChat ID: wxid_2aa15bz1369r22
+     Discord: @shadowDevv
+     Telegram: @Addmepleasenow
+     -->
+    
+    <title>Seekly - Smart Search Engine</title>
+    
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .search-container {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        .result-card {
+            transition: all 0.2s ease;
+        }
+        .result-card:hover {
+            box-shadow: 0 1px 6px rgba(32, 33, 36, 0.28);
+        }
+        .dark-mode {
+            background-color: #0a0a0a; 
+            color: #f0f0f0;
+        }
+        .dark-mode .bg-white {
+            background-color: #1a1a1a;
+        }
+        .dark-mode .text-gray-800 {
+            color: #f0f0f0;
+        }
+        .dark-mode .border-gray-200 {
+            border-color: #333;
+        }
+        .dark-mode .text-gray-500 {
+            color: #999;
+        }
+        .dark-mode .text-blue-600 {
+            color: #8ab4f8;
+        }
+        .rtl {
+            direction: rtl;
+            text-align: right;
+        }
+        .rtl .rtl-mirror {
+            transform: scaleX(-1);
+        }
+        .settings-section {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .search-tab {
+            padding-bottom: 12px;
+            border-bottom: 3px solid transparent;
+        }
+        .search-tab.active {
+            border-bottom-color: #1a73e8;
+            color: #1a73e8;
+        }
+        .search-tab.active.dark-mode {
+            border-bottom-color: #8ab4f8;
+            color: #8ab4f8;
+        }
+        .image-result {
+            height: 200px;
+            width: 100%;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        .image-result-container:hover .image-result {
+            opacity: 0.9;
+        }
+        .loading-spinner {
+            display: none;
+            width: 40px;
+            height: 40px;
+            margin: 20px auto;
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top-color: #1a73e8;
+            animation: spin 1s ease-in-out infinite;
+        }
+        .dark-mode .loading-spinner {
+            border-top-color: #8ab4f8;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .search-loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .search-loading-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .dark-mode .search-loading-content {
+            background-color: #1a1a1a;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen text-gray-800">
+    <div id="cookieConsent" class="fixed bottom-0 left-0 right-0 bg-gray-800 text-white p-4 hidden">
+        <div class="container mx-auto flex justify-between items-center">
+            <p>We use cookies to improve your experience. By continuing, you agree to our use of cookies.</p>
+            <button id="acceptCookies" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">Accept</button>
+        </div>
+    </div>
+
+    
+    <div id="searchLoading" class="search-loading hidden">
+        <div class="search-loading-content">
+            <div class="loading-spinner"></div>
+            <p class="mt-4 text-lg font-medium">Searching...</p>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 py-4">
+        <header class="flex justify-between items-center mb-4">
+            <div class="flex items-center">
+                <h1 class="text-2xl font-bold text-blue-600 flex items-center">
+                    <span class="bg-blue-600 text-white rounded px-2 py-1 mr-2">S</span>
+                    <span>eekly</span>
+                </h1>
+                <div class="ml-6 hidden md:flex space-x-6">
+                    <a href="#" class="search-tab active" id="webTab">Web</a>
+                    <a href="#" class="search-tab" id="imagesTab">Images</a>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button id="darkModeToggle" class="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button id="languageToggle" class="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <i class="fas fa-language"></i>
+                </button>
+                <button id="settingsToggle" class="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <i class="fas fa-cog"></i>
+                </button>
+            </div>
+        </header>
+
+        <div id="searchSection">
+            <div class="search-container mb-8">
+                <div class="relative">
+                    <input type="text" id="searchInput" placeholder="Search on Seekly..." 
+                        class="w-full px-6 py-4 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400">
+                    <button id="searchButton" class="absolute right-3 top-3 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400">
+                        <i class="fas fa-search text-xl"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div id="searchResults" class="space-y-6">
+                <div id="initialMessage" class="text-center py-12">
+                    <i class="fas fa-search text-5xl text-gray-300 mb-4"></i>
+                    <h2 class="text-2xl font-bold text-gray-500 dark:text-gray-400">Search on Seekly</h2>
+                    <p class="text-gray-400 dark:text-gray-500">Find websites and images across the web</p>
+                </div>
+            </div>
+
+            <div id="loadMoreContainer" class="text-center mt-8 hidden">
+                <button id="loadMoreBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg dark:bg-blue-600 dark:hover:bg-blue-700">
+                    Load More
+                </button>
+            </div>
+        </div>
+
+        <div id="settingsSection" class="settings-section hidden">
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg mb-8">
+                <h2 class="text-xl font-bold mb-6 flex items-center">
+                    <i class="fas fa-cog mr-3 text-blue-600 dark:text-blue-400"></i>
+                    <span>Settings</span>
+                </h2>
+                <div class="space-y-6">
+                    <div>
+                        <h3 data-i18n="appearance" class="text-lg font-semibold mb-3">Appearance</h3>
+                        <div class="space-y-3">
+                            <label class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
+                                <div>
+                                    <div data-i18n="darkMode" class="font-medium">Dark Mode</div>
+                                    <div data-i18n="darkModeDesc" class="text-sm text-gray-500 dark:text-gray-400">Switch between light and dark theme</div>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="darkModeSwitch" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                                </label>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 data-i18n="language" class="text-lg font-semibold mb-3">Language</h3>
+                        <div class="space-y-3">
+                            <label class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
+                                <div>
+                                    <div data-i18n="interfaceLanguage" class="font-medium">Interface Language</div>
+                                    <div data-i18n="languageDesc" class="text-sm text-gray-500 dark:text-gray-400">Choose your preferred language</div>
+                                </div>
+                                <select id="languageSelect" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">
+                                    <option value="en">English</option>
+                                    <option value="ar">العربية (Arabic)</option>
+                                    <option value="auto">Auto-detect</option>
+                                </select>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 data-i18n="searchSettings" class="text-lg font-semibold mb-3">Search</h3>
+                        <div class="space-y-3">
+                            <label class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
+                                <div>
+                                    <div data-i18n="safeSearch" class="font-medium">Safe Search</div>
+                                    <div data-i18n="safeSearchDesc" class="text-sm text-gray-500 dark:text-gray-400">Filter explicit content</div>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="safeSearchSwitch" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                                </label>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 data-i18n="websiteOwners" class="text-lg font-semibold mb-3">Website Owners</h3>
+                        <div class="space-y-3">
+                            <button id="addWebsiteBtn" class="w-full flex items-center justify-between p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
+                                <div>
+                                    <div data-i18n="addWebsite" class="font-medium">Add Your Website</div>
+                                    <div data-i18n="addWebsiteDesc" class="text-sm text-gray-500 dark:text-gray-400">Submit your website to our index</div>
+                                </div>
+                                <i class="fas fa-chevron-right text-gray-400"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="addWebsiteForm" class="settings-section hidden">
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg mb-8">
+                <div class="flex items-center mb-6">
+                    <button id="backToSettings" class="mr-4 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <h2 class="text-xl font-bold">Add Your Website</h2>
+                </div>
+                
+                <form id="websiteSubmissionForm" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block mb-2 font-medium">Website URL*</label>
+                            <input type="url" id="websiteUrl" required 
+                                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">
+                        </div>
+                        <div>
+                            <label class="block mb-2 font-medium">Website Name*</label>
+                            <input type="text" id="websiteName" required 
+                                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block mb-2 font-medium">Image URL*</label>
+                            <input type="url" id="websiteImage" required 
+                                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">A representative image of your website (1200x630 recommended)</p>
+                        </div>
+                        <div>
+                            <label class="block mb-2 font-medium">Icon URL*</label>
+                            <input type="url" id="websiteIcon" required 
+                                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Square icon (512x512 recommended)</p>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block mb-2 font-medium">Description*</label>
+                        <textarea id="websiteDescription" required rows="3" maxlength="160"
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"></textarea>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Brief description of your website (max 160 characters)</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block mb-2 font-medium">Your Full Name*</label>
+                            <input type="text" id="submitterName" required 
+                                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">
+                        </div>
+                        <div>
+                            <label class="block mb-2 font-medium">Your Email*</label>
+                            <input type="email" id="submitterEmail" required 
+                                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block mb-2 font-medium">Tags (comma separated)*</label>
+                            <input type="text" id="websiteTags" required 
+                                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Keywords that describe your website (e.g. tech, news, shopping)</p>
+                        </div>
+                        <div>
+                            <label class="block mb-2 font-medium">Website Type*</label>
+                            <select id="websiteType" required 
+                                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">
+                                <option value="technology">Technology</option>
+                                <option value="news">News</option>
+                                <option value="education">Education</option>
+                                <option value="entertainment">Entertainment</option>
+                                <option value="business">Business</option>
+                                <option value="shopping">Shopping</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="flex items-start">
+                            <input type="checkbox" id="isFamilyFriendly" class="mt-1 form-checkbox h-5 w-5 text-blue-600 rounded dark:text-blue-400">
+                            <span class="ml-2">My website is suitable for people under 15 years old</span>
+                        </label>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                        <button type="button" id="cancelAddWebsite" class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-700">
+                            Cancel
+                        </button>
+                        <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg dark:bg-blue-600 dark:hover:bg-blue-700">
+                            Submit Website
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <footer class="mt-12 pt-8 border-t border-gray-200 text-center text-gray-500 dark:border-gray-700 dark:text-gray-400">
+            <p>© 2025 Seekly. Made with <i class="fas fa-heart text-red-500"></i> by <a href="#" class="text-blue-600 hover:underline dark:text-blue-400">Georg Michelle</a></p>
+        </footer>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "API",
+            authDomain: "AUTH",
+            databaseURL: "DATABASEURL",
+            projectId: "PR_ID",
+            storageBucket: "BUCKET",
+            messagingSenderId: "SENDERID",
+            appId: "AppID",
+            measurementId: "Me_ID"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        
+        
+
+        let currentPage = 1;
+        let currentSearchTerm = '';
+        let currentSearchType = 'web';
+        let darkMode = localStorage.getItem('darkMode') === 'true';
+        let language = localStorage.getItem('language') || 'en';
+        let safeSearch = localStorage.getItem('safeSearch') === 'true';
+        let lastVisibleKey = null;
+        let hasMoreResults = false;
+
+        
+        const translations = {
+            en: {
+                searchPlaceholder: "Search on Seekly...",
+                initialTitle: "Search on Seekly",
+                initialSubtitle: "Find websites and images across the web",
+                noResultsTitle: "No results found",
+                noResultsSubtitle: "Try different keywords",
+                loadMore: "Load More",
+                settings: "Settings",
+                appearance: "Appearance",
+                darkMode: "Dark Mode",
+                darkModeDesc: "Switch between light and dark theme",
+                language: "Language",
+                interfaceLanguage: "Interface Language",
+                languageDesc: "Choose your preferred language",
+                searchSettings: "Search",
+                safeSearch: "Safe Search",
+                safeSearchDesc: "Filter explicit content",
+                websiteOwners: "Website Owners",
+                addWebsite: "Add Your Website",
+                addWebsiteDesc: "Submit your website to our index",
+                submitWebsite: "Submit Website",
+                cancel: "Cancel",
+                madeBy: "Made by"
+            },
+            ar: {
+                searchPlaceholder: "ابحث على سيكلي...",
+                initialTitle: "ابحث على سيكلي",
+                initialSubtitle: "ابحث عن المواقع والصور عبر الويب",
+                noResultsTitle: "لا توجد نتائج",
+                noResultsSubtitle: "حاول استخدام كلمات أخرى",
+                loadMore: "تحميل المزيد",
+                settings: "الإعدادات",
+                appearance: "المظهر",
+                darkMode: "الوضع المظلم",
+                darkModeDesc: "التبديل بين الوضع الفاتح والداكن",
+                language: "اللغة",
+                interfaceLanguage: "لغة الواجهة",
+                languageDesc: "اختر اللغة المفضلة لديك",
+                searchSettings: "البحث",
+                safeSearch: "البحث الآمن",
+                safeSearchDesc: "تصفية المحتوى الصريح",
+                websiteOwners: "أصحاب المواقع",
+                addWebsite: "أضف موقعك",
+                addWebsiteDesc: "أرسل موقعك إلى فهرسنا",
+                submitWebsite: "إرسال الموقع",
+                cancel: "إلغاء",
+                madeBy: "صنع بواسطة"
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+            checkMaintenanceMode();
+            checkCookieConsent();
+            trackVisit();
+        });
+
+        function initializeApp() {
+            applyDarkMode();
+            applyLanguage();
+            applySafeSearch();
+
+            document.getElementById('searchButton').addEventListener('click', performSearch);
+            document.getElementById('searchInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') performSearch();
+            });
+
+            document.getElementById('darkModeToggle').addEventListener('click', toggleDarkMode);
+            document.getElementById('languageToggle').addEventListener('click', toggleLanguage);
+            document.getElementById('settingsToggle').addEventListener('click', toggleSettings);
+            document.getElementById('darkModeSwitch').addEventListener('change', toggleDarkMode);
+            document.getElementById('languageSelect').addEventListener('change', changeLanguage);
+            document.getElementById('safeSearchSwitch').addEventListener('change', toggleSafeSearch);
+            document.getElementById('addWebsiteBtn').addEventListener('click', showAddWebsiteForm);
+            document.getElementById('backToSettings').addEventListener('click', backToSettings);
+            document.getElementById('cancelAddWebsite').addEventListener('click', hideAddWebsiteForm);
+            document.getElementById('websiteSubmissionForm').addEventListener('submit', submitWebsite);
+            document.getElementById('loadMoreBtn').addEventListener('click', loadMoreResults);
+            
+
+            document.getElementById('webTab').addEventListener('click', function(e) {
+                e.preventDefault();
+                switchTab('web');
+                if (currentSearchTerm) performSearch();
+            });
+            
+            document.getElementById('imagesTab').addEventListener('click', function(e) {
+                e.preventDefault();
+                switchTab('images');
+                if (currentSearchTerm) performSearch();
+            });
+        }
+
+        function switchTab(tab) {
+            currentSearchType = tab;
+            updateActiveTab();
+            
+            
+            document.getElementById('searchResults').innerHTML = '';
+            document.getElementById('loadMoreContainer').classList.add('hidden');
+            
+            if (currentSearchTerm) {
+                document.getElementById('initialMessage').classList.add('hidden');
+            } else {
+                document.getElementById('initialMessage').classList.remove('hidden');
+            }
+        }
+
+        function showSearchLoading() {
+            document.getElementById('searchLoading').classList.remove('hidden');
+        }
+
+        function hideSearchLoading() {
+            document.getElementById('searchLoading').classList.add('hidden');
+        }
+
+        function performSearch() {
+            const searchTerm = document.getElementById('searchInput').value.trim();
+            if (!searchTerm) return;
+
+            showSearchLoading();
+            
+            currentSearchTerm = searchTerm;
+            currentPage = 1;
+            lastVisibleKey = null;
+            
+            document.getElementById('initialMessage').classList.add('hidden');
+            document.getElementById('searchResults').innerHTML = '';
+            document.getElementById('loadMoreContainer').classList.add('hidden');
+
+            
+            setTimeout(() => {
+                if (currentSearchType === 'images') {
+                    searchImages(searchTerm);
+                } else {
+                    searchWebsites(searchTerm);
+                }
+            }, 100);
+        }
+
+        function searchWebsites(searchTerm) {
+            const searchTerms = searchTerm.toLowerCase().split(' ');
+            const resultsRef = database.ref('websites').orderByChild('status').equalTo('approved');
+
+            resultsRef.once('value', snapshot => {
+                const results = [];
+                snapshot.forEach(childSnapshot => {
+                    const website = childSnapshot.val();
+                    website.key = childSnapshot.key;
+                    
+                    
+                    if (safeSearch && !website.isFamilyFriendly) return;
+                    
+                    const websiteTags = website.tags ? website.tags.toLowerCase().split(',') : [];
+                    const websiteName = website.name ? website.name.toLowerCase() : '';
+                    const websiteDescription = website.description ? website.description.toLowerCase() : '';
+                    const websiteType = website.type ? website.type.toLowerCase() : '';
+                    
+                    let matchScore = 0;
+                    hideSearchLoading(); 
+                    
+                    searchTerms.forEach(term => {
+                        term = term.trim();
+                        if (!term) return;
+                        
+                        
+                        if (websiteName === term) matchScore += 5;
+                        if (websiteTags.includes(term)) matchScore += 4;
+                        
+                        
+                        if (websiteName.includes(term)) matchScore += 3;
+                        if (websiteDescription.includes(term)) matchScore += 2;
+                        if (websiteType.includes(term)) matchScore += 1;
+                        
+                        
+                        if (website.url.toLowerCase().includes(term)) matchScore += 1;
+                    });
+                    
+                    if (matchScore > 0) {
+                        results.push({...website, matchScore});
+                    }
+                });
+
+                
+                results.sort((a, b) => {
+                    if (a.isPromoted && !b.isPromoted) return -1;
+                    if (!a.isPromoted && b.isPromoted) return 1;
+                    return b.matchScore - a.matchScore || b.visits - a.visits;
+                });
+
+                displayResults(results.slice(0, 10));
+                hasMoreResults = results.length > 10;
+                lastVisibleKey = results.length > 0 ? results[9].key : null;
+
+                if (hasMoreResults) {
+                    document.getElementById('loadMoreContainer').classList.remove('hidden');
+                }
+                
+                hideSearchLoading();
+            }).catch(error => {
+                console.error("Search error:", error);
+                hideSearchLoading();
+            });
+        }
+
+        function searchImages(searchTerm) {
+            const searchTerms = searchTerm.toLowerCase().split(' ');
+            const resultsRef = database.ref('websites').orderByChild('status').equalTo('approved');
+
+            resultsRef.once('value', snapshot => {
+                const results = [];
+                snapshot.forEach(childSnapshot => {
+                    const website = childSnapshot.val();
+                    website.key = childSnapshot.key;
+                    
+                    
+                    if (!website.image || (safeSearch && !website.isFamilyFriendly)) return;
+                    
+                    const websiteTags = website.tags ? website.tags.toLowerCase().split(',') : [];
+                    const websiteName = website.name ? website.name.toLowerCase() : '';
+                    const websiteDescription = website.description ? website.description.toLowerCase() : '';
+                    const websiteType = website.type ? website.type.toLowerCase() : '';
+                    
+                    let matchScore = 0;
+                    hideSearchLoading(); 
+                    
+                    searchTerms.forEach(term => {
+                        term = term.trim();
+                        if (!term) return;
+                        
+                        if (websiteTags.includes(term)) matchScore += 3;
+                        if (websiteName.includes(term)) matchScore += 2;
+                        if (websiteDescription.includes(term)) matchScore += 1;
+                        if (websiteType.includes(term)) matchScore += 1;
+                    });
+                    
+                    if (matchScore > 0) {
+                        results.push({...website, matchScore});
+                    }
+                });
+
+                
+                results.sort((a, b) => {
+                    return b.matchScore - a.matchScore || b.visits - a.visits;
+                });
+
+                displayResults(results.slice(0, 12));
+                hasMoreResults = results.length > 12;
+                lastVisibleKey = results.length > 0 ? results[11].key : null;
+
+                if (hasMoreResults) {
+                    document.getElementById('loadMoreContainer').classList.remove('hidden');
+                }
+                
+                hideSearchLoading();
+            }).catch(error => {
+                console.error("Image search error:", error);
+                hideSearchLoading();
+            });
+        }
+
+        function displayResults(results) {
+            const resultsContainer = document.getElementById('searchResults');
+            
+            if (results.length === 0) {
+                resultsContainer.innerHTML = `
+                    <div class="text-center py-12">
+                        <i class="fas fa-exclamation-circle text-5xl text-gray-300 mb-4"></i>
+                        <h2 class="text-2xl font-bold text-gray-500 dark:text-gray-400">${translations[language].noResultsTitle}</h2>
+                        <p class="text-gray-400 dark:text-gray-500">${translations[language].noResultsSubtitle}</p>
+                    </div>
+                `;
+                return;
+            }
+
+            if (currentSearchType === 'images') {
+                const imageGrid = document.createElement('div');
+                imageGrid.className = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4';
+                
+                results.forEach(website => {
+                    if (!website.image) return;
+                    
+                    const imageContainer = document.createElement('div');
+                    imageContainer.className = 'image-result-container';
+                    
+                    const card = document.createElement('div');
+                    card.className = 'result-card bg-white dark:bg-gray-700 rounded-lg overflow-hidden shadow-sm cursor-pointer';
+                    
+                    const img = document.createElement('img');
+                    img.src = website.image;
+                    img.alt = website.name;
+                    img.className = 'image-result w-full h-48 sm:h-56 md:h-64 object-cover';
+                    img.loading = 'lazy';
+                    img.onerror = function() {
+                        this.src = 'https://via.placeholder.com/300x200?text=Image+Not+Available';
+                    };
+                    
+                    const infoDiv = document.createElement('div');
+                    infoDiv.className = 'p-3 hidden md:block';
+                    infoDiv.innerHTML = `
+                        <div class="flex items-start">
+                            <img src="${website.icon || 'https://via.placeholder.com/32'}" alt="${website.name}" class="w-5 h-5 mr-2 mt-0.5">
+                            <div class="truncate">
+                                <h3 class="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">${website.name}</h3>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 truncate">${website.url.replace(/^https?:\/\//, '')}</p>
+                            </div>
+                        </div>
+                        ${website.description ? `<p class="text-xs text-gray-600 dark:text-gray-300 mt-1 truncate">${website.description}</p>` : ''}
+                    `;
+                    
+                    card.appendChild(img);
+                    card.appendChild(infoDiv);
+                    
+                    card.addEventListener('click', () => {
+                        recordWebsiteClick(website.key, website.url);
+                        window.open(website.url, '_blank');
+                    });
+                    
+                    imageContainer.appendChild(card);
+                    imageGrid.appendChild(imageContainer);
+                });
+                
+                resultsContainer.appendChild(imageGrid);
+            } else {
+                results.forEach(website => {
+                    const card = document.createElement('div');
+                    card.className = 'result-card bg-white dark:bg-gray-700 p-4 rounded-lg shadow-sm cursor-pointer';
+                    
+                    
+                    let domain = website.url.replace(/^https?:\/\/(www\.)?/, '');
+                    domain = domain.split('/')[0];
+                    
+                    card.innerHTML = `
+                        <div class="flex items-start">
+                            <img src="${website.icon || 'https://via.placeholder.com/32'}" alt="${website.name}" class="w-5 h-5 mr-3 mt-1">
+                            <div class="flex-1">
+                                <div class="flex items-center">
+                                    <h3 class="text-lg font-medium text-blue-600 dark:text-blue-400">${website.name}</h3>
+                                    ${website.isPromoted ? '<span class="ml-2 text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 px-2 py-0.5 rounded">Promoted</span>' : ''}
+                                </div>
+                                <p class="text-sm text-green-700 dark:text-green-400 mb-1">${domain}</p>
+                                <p class="text-sm text-gray-700 dark:text-gray-300 mb-2">${website.description || 'No description available'}</p>
+                            </div>
+                        </div>
+                    `;
+                    
+                    card.addEventListener('click', () => {
+                        recordWebsiteClick(website.key, website.url);
+                        window.open(website.url, '_blank');
+                    });
+                    
+                    resultsContainer.appendChild(card);
+                });
+            }
+        }
+
+        function loadMoreResults() {
+            showSearchLoading();
+            
+            if (currentSearchType === 'images') {
+                const searchTerms = currentSearchTerm.toLowerCase().split(' ');
+                const resultsRef = database.ref('websites').orderByChild('status').equalTo('approved');
+
+                resultsRef.once('value', snapshot => {
+                    const allResults = [];
+                    snapshot.forEach(childSnapshot => {
+                        const website = childSnapshot.val();
+                        website.key = childSnapshot.key;
+                        
+                        if (!website.image || (safeSearch && !website.isFamilyFriendly)) return;
+                        
+                        const websiteTags = website.tags ? website.tags.toLowerCase().split(',') : [];
+                        const websiteName = website.name ? website.name.toLowerCase() : '';
+                        const websiteDescription = website.description ? website.description.toLowerCase() : '';
+                        const websiteType = website.type ? website.type.toLowerCase() : '';
+                        
+                        let matchScore = 0;
+                        
+                        searchTerms.forEach(term => {
+                            term = term.trim();
+                            if (!term) return;
+                            
+                            if (websiteTags.includes(term)) matchScore += 3;
+                            if (websiteName.includes(term)) matchScore += 2;
+                            if (websiteDescription.includes(term)) matchScore += 1;
+                            if (websiteType.includes(term)) matchScore += 1;
+                        });
+                        
+                        if (matchScore > 0) {
+                            allResults.push({...website, matchScore});
+                        }
+                    });
+
+                    allResults.sort((a, b) => {
+                        return b.matchScore - a.matchScore || b.visits - a.visits;
+                    });
+
+                    const startIndex = currentPage * 12;
+                    const endIndex = startIndex + 12;
+                    const nextResults = allResults.slice(startIndex, endIndex);
+
+                    displayResults(nextResults);
+                    currentPage++;
+                    hasMoreResults = allResults.length > endIndex;
+
+                    if (!hasMoreResults) {
+                        document.getElementById('loadMoreContainer').classList.add('hidden');
+                    }
+                    
+                    hideSearchLoading();
+                }).catch(error => {
+                    console.error("Load more error:", error);
+                    hideSearchLoading();
+                });
+            } else {
+                const searchTerms = currentSearchTerm.toLowerCase().split(' ');
+                const resultsRef = database.ref('websites').orderByChild('status').equalTo('approved');
+
+                resultsRef.once('value', snapshot => {
+                    const allResults = [];
+                    snapshot.forEach(childSnapshot => {
+                        const website = childSnapshot.val();
+                        website.key = childSnapshot.key;
+                        
+                        if (safeSearch && !website.isFamilyFriendly) return;
+                        
+                        const websiteTags = website.tags ? website.tags.toLowerCase().split(',') : [];
+                        const websiteName = website.name ? website.name.toLowerCase() : '';
+                        const websiteDescription = website.description ? website.description.toLowerCase() : '';
+                        const websiteType = website.type ? website.type.toLowerCase() : '';
+                        
+                        let matchScore = 0;
+                        
+                        searchTerms.forEach(term => {
+                            term = term.trim();
+                            if (!term) return;
+                            
+                            if (websiteName === term) matchScore += 5;
+                            if (websiteTags.includes(term)) matchScore += 4;
+                            if (websiteName.includes(term)) matchScore += 3;
+                            if (websiteDescription.includes(term)) matchScore += 2;
+                            if (websiteType.includes(term)) matchScore += 1;
+                            if (website.url.toLowerCase().includes(term)) matchScore += 1;
+                        });
+                        
+                        if (matchScore > 0) {
+                            allResults.push({...website, matchScore});
+                        }
+                    });
+
+                    allResults.sort((a, b) => {
+                        if (a.isPromoted && !b.isPromoted) return -1;
+                        if (!a.isPromoted && b.isPromoted) return 1;
+                        return b.matchScore - a.matchScore || b.visits - a.visits;
+                    });
+
+                    const startIndex = currentPage * 10;
+                    const endIndex = startIndex + 10;
+                    const nextResults = allResults.slice(startIndex, endIndex);
+
+                    displayResults(nextResults);
+                    currentPage++;
+                    hasMoreResults = allResults.length > endIndex;
+
+                    if (!hasMoreResults) {
+                        document.getElementById('loadMoreContainer').classList.add('hidden');
+                    }
+                    
+                    hideSearchLoading();
+                }).catch(error => {
+                    console.error("Load more error:", error);
+                    hideSearchLoading();
+                });
+            }
+        }
+
+        function toggleDarkMode() {
+            darkMode = !darkMode;
+            localStorage.setItem('darkMode', darkMode);
+            applyDarkMode();
+            document.getElementById('darkModeSwitch').checked = darkMode;
+        }
+
+        function applyDarkMode() {
+            if (darkMode) {
+                document.body.classList.add('dark-mode');
+                document.getElementById('darkModeToggle').innerHTML = '<i class="fas fa-sun"></i>';
+            } else {
+                document.body.classList.remove('dark-mode');
+                document.getElementById('darkModeToggle').innerHTML = '<i class="fas fa-moon"></i>';
+            }
+        }
+
+        function toggleLanguage() {
+            language = language === 'en' ? 'ar' : 'en';
+            localStorage.setItem('language', language);
+            applyLanguage();
+            document.getElementById('languageSelect').value = language;
+        }
+
+        function changeLanguage() {
+            language = document.getElementById('languageSelect').value;
+            localStorage.setItem('language', language);
+            applyLanguage();
+        }
+
+        function applyLanguage() {
+            if (language === 'ar') {
+                document.documentElement.dir = 'rtl';
+                document.documentElement.lang = 'ar';
+            } else {
+                document.documentElement.dir = 'ltr';
+                document.documentElement.lang = 'en';
+            }
+            
+            
+            document.getElementById('searchInput').placeholder = translations[language].searchPlaceholder;
+            document.getElementById('initialMessage').querySelector('h2').textContent = translations[language].initialTitle;
+            document.getElementById('initialMessage').querySelector('p').textContent = translations[language].initialSubtitle;
+            document.getElementById('loadMoreBtn').textContent = translations[language].loadMore;
+            
+            
+            document.querySelector('#settingsSection h2 span').textContent = translations[language].settings;
+             document.querySelector('#settingsSection [data-i18n="appearance"]').textContent = translations[language].appearance;
+            document.querySelector('#settingsSection [data-i18n="darkMode"]').textContent = translations[language].darkMode;
+            document.querySelector('#settingsSection [data-i18n="darkModeDesc"]').textContent = translations[language].darkModeDesc;
+            document.querySelector('#settingsSection [data-i18n="language"]').textContent = translations[language].language;
+            document.querySelector('#settingsSection [data-i18n="interfaceLanguage"]').textContent = translations[language].interfaceLanguage;
+            document.querySelector('#settingsSection [data-i18n="languageDesc"]').textContent = translations[language].languageDesc;
+            document.querySelector('#settingsSection [data-i18n="searchSettings"]').textContent = translations[language].searchSettings;
+            document.querySelector('#settingsSection [data-i18n="safeSearch"]').textContent = translations[language].safeSearch;
+            document.querySelector('#settingsSection [data-i18n="safeSearchDesc"]').textContent = translations[language].safeSearchDesc;
+            document.querySelector('#settingsSection [data-i18n="websiteOwners"]').textContent = translations[language].websiteOwners;
+            document.querySelector('#settingsSection [data-i18n="addWebsite"]').textContent = translations[language].addWebsite;
+            document.querySelector('#settingsSection [data-i18n="addWebsiteDesc"]').textContent = translations[language].addWebsiteDesc;
+            
+            
+            document.querySelector('#addWebsiteForm button[type="submit"]').textContent = translations[language].submitWebsite;
+            document.querySelector('#addWebsiteForm #cancelAddWebsite').textContent = translations[language].cancel;
+            
+            
+            document.querySelector('footer p').innerHTML = `© 2025 Seekly. ${translations[language].madeBy} <a href="#" class="text-blue-600 hover:underline dark:text-blue-400">Georg Michelle</a>`;
+        }
+
+        function toggleSafeSearch() {
+            safeSearch = !safeSearch;
+            localStorage.setItem('safeSearch', safeSearch);
+            document.getElementById('safeSearchSwitch').checked = safeSearch;
+            
+            
+            if (currentSearchTerm) {
+                performSearch();
+            }
+        }
+
+        function applySafeSearch() {
+            document.getElementById('safeSearchSwitch').checked = safeSearch;
+        }
+
+        function toggleSettings() {
+            document.getElementById('searchSection').classList.toggle('hidden');
+            document.getElementById('settingsSection').classList.toggle('hidden');
+            document.getElementById('addWebsiteForm').classList.add('hidden');
+        }
+
+        function showAddWebsiteForm() {
+            document.getElementById('settingsSection').classList.add('hidden');
+            document.getElementById('addWebsiteForm').classList.remove('hidden');
+        }
+
+        function backToSettings() {
+            document.getElementById('addWebsiteForm').classList.add('hidden');
+            document.getElementById('settingsSection').classList.remove('hidden');
+        }
+
+        function hideAddWebsiteForm() {
+            document.getElementById('addWebsiteForm').classList.add('hidden');
+            document.getElementById('settingsSection').classList.remove('hidden');
+        }
+
+        function submitWebsite(e) {
+            e.preventDefault();
+            
+            const websiteData = {
+                url: document.getElementById('websiteUrl').value,
+                name: document.getElementById('websiteName').value,
+                image: document.getElementById('websiteImage').value,
+                icon: document.getElementById('websiteIcon').value,
+                description: document.getElementById('websiteDescription').value,
+                submitterName: document.getElementById('submitterName').value,
+                submitterEmail: document.getElementById('submitterEmail').value,
+                tags: document.getElementById('websiteTags').value,
+                type: document.getElementById('websiteType').value,
+                isFamilyFriendly: document.getElementById('isFamilyFriendly').checked,
+                visits: 0,
+                monthlyVisits: 0,
+                status: 'pending',
+                createdAt: firebase.database.ServerValue.TIMESTAMP
+            };
+
+            database.ref('websiteSubmissions').push(websiteData)
+                .then(() => {
+                    alert(language === 'ar' ? 'تم إرسال موقعك بنجاح للمراجعة. شكراً لك!' : 'Your website has been submitted for review. Thank you!');
+                    hideAddWebsiteForm();
+                    document.getElementById('websiteSubmissionForm').reset();
+                })
+                .catch(error => {
+                    alert((language === 'ar' ? 'خطأ في إرسال الموقع: ' : 'Error submitting website: ') + error.message);
+                });
+        }
+
+        function updateActiveTab() {
+            document.querySelectorAll('.search-tab').forEach(tab => {
+                tab.classList.remove('active');
+                tab.classList.remove('text-blue-600', 'dark:text-blue-400');
+            });
+            
+            if (currentSearchType === 'web') {
+                document.getElementById('webTab').classList.add('active', 'text-blue-600', 'dark:text-blue-400');
+            } else if (currentSearchType === 'images') {
+                document.getElementById('imagesTab').classList.add('active', 'text-blue-600', 'dark:text-blue-400');
+            }
+        }
+
+        function checkMaintenanceMode() {
+            database.ref('maintenance').once('value', snapshot => {
+                if (snapshot.val() && snapshot.val().enabled) {
+                    document.body.innerHTML = `
+                        <div class="min-h-screen flex items-center justify-center bg-gray-100 p-4 dark:bg-gray-800">
+                            <div class="bg-white dark:bg-gray-700 p-8 rounded-lg shadow-lg max-w-md w-full text-center">
+                                <i class="fas fa-tools text-5xl text-yellow-500 mb-4"></i>
+                                <h1 class="text-2xl font-bold text-gray-800 dark:text-white mb-2">${language === 'ar' ? 'تحت الصيانة' : 'Under Maintenance'}</h1>
+                                <p class="text-gray-600 dark:text-gray-300 mb-6">${snapshot.val().message || (language === 'ar' ? 'نحن نقوم حاليًا بأعمال الصيانة. يرجى التحقق مرة أخرى لاحقًا.' : 'We are currently performing maintenance. Please check back later.')}</p>
+                                <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+        }
+
+        function checkCookieConsent() {
+            const consentGiven = localStorage.getItem('cookieConsent');
+            if (!consentGiven) {
+                document.getElementById('cookieConsent').classList.remove('hidden');
+            }
+        }
+
+        document.getElementById('acceptCookies').addEventListener('click', function() {
+            localStorage.setItem('cookieConsent', 'true');
+            document.getElementById('cookieConsent').classList.add('hidden');
+        });
+
+        function trackVisit() {
+            fetch('https://api.ipify.org?format=json')
+                .then(response => response.json())
+                .then(data => {
+                    const ip = data.ip;
+                    const userAgent = navigator.userAgent;
+                    const deviceInfo = getDeviceInfo();
+                    const visitTime = new Date().toISOString();
+
+                    const visitData = {
+                        ip,
+                        userAgent,
+                        device: deviceInfo,
+                        visitTime,
+                        referrer: document.referrer || 'direct'
+                    };
+
+                    database.ref('visits').push(visitData);
+                })
+                .catch(error => {
+                    console.error('Error tracking visit:', error);
+                });
+        }
+
+        function getDeviceInfo() {
+            const userAgent = navigator.userAgent;
+            let device = 'Unknown';
+            
+            if (userAgent.match(/Android/i)) device = 'Android';
+            else if (userAgent.match(/iPhone|iPad|iPod/i)) device = 'iOS';
+            else if (userAgent.match(/Windows/i)) device = 'Windows';
+            else if (userAgent.match(/Macintosh/i)) device = 'Mac';
+            else if (userAgent.match(/Linux/i)) device = 'Linux';
+            
+            return {
+                type: device,
+                isMobile: /Mobi/i.test(userAgent),
+                isTablet: /Tablet|iPad/i.test(userAgent),
+                browser: getBrowserInfo()
+            };
+        }
+
+        function getBrowserInfo() {
+            const userAgent = navigator.userAgent;
+            let browser = 'Unknown';
+            
+            if (userAgent.match(/Chrome/i)) browser = 'Chrome';
+            else if (userAgent.match(/Firefox/i)) browser = 'Firefox';
+            else if (userAgent.match(/Safari/i)) browser = 'Safari';
+            else if (userAgent.match(/Edge/i)) browser = 'Edge';
+            else if (userAgent.match(/Opera|OPR/i)) browser = 'Opera';
+            else if (userAgent.match(/MSIE|Trident/i)) browser = 'IE';
+            
+            return browser;
+        }
+
+        function recordWebsiteClick(websiteId, websiteUrl) {
+            fetch('https://api.ipify.org?format=json')
+                .then(response => response.json())
+                .then(data => {
+                    const ip = data.ip;
+                    const clickData = {
+                        websiteId,
+                        websiteUrl,
+                        ip,
+                        userAgent: navigator.userAgent,
+                        clickTime: new Date().toISOString()
+                    };
+
+                    database.ref('websiteClicks').push(clickData);
+                    
+                    database.ref(`websites/${websiteId}/visits`).transaction(currentVisits => {
+                        return (currentVisits || 0) + 1;
+                    });
+                })
+                .catch(error => {
+                    console.error('Error recording click:', error);
+                });
+        }
+        
+   //Contact me
+   //Website: georg-michelle.ct.ws
+   //instagram: h1xzblu
+   //WeChat ID: wxid_2aa15bz1369r22
+   //Discord: @shadowDevv
+   //Telegram: @Addmepleasenow
+        
+    </script>
+</body>
+</html>
