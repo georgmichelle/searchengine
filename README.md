@@ -91,7 +91,7 @@ For support or questions, contact the developer:
 
 - **GitHub**: [@georgmichelle](https://github.com/georgmichelle)
 - **Website**: [georg-michelle.ct.ws](https://georg-michelle.ct.ws)
-- **Instagram**: [@h1xzblu](https://instagram.com/h1xzblu)
+- **Instagram**: [@1hxzblu](https://instagram.com/1hxzblu)
 - **Discord**: @shadowDevv
 - **Telegram**: @Addmepleasenow
 - **WeChat ID**: wxid_2aa15bz1369r22
