@@ -1,0 +1,1205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+         <!-- 
+     Contact me
+     Website: georg-michelle.ct.ws
+     instagram: h1xzblu
+     WeChat ID: wxid_2aa15bz1369r22
+     Discord: @shadowDevv
+     Telegram: @Addmepleasenow
+     -->
+    
+    <title>Seekly Admin Panel</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <style>
+        .sidebar {
+            width: 250px;
+            transition: all 0.3s;
+        }
+        .main-content {
+            margin-left: 250px;
+            transition: all 0.3s;
+        }
+        .sidebar.collapsed {
+            width: 80px;
+        }
+        .sidebar.collapsed .main-content {
+            margin-left: 80px;
+        }
+        .sidebar.collapsed .menu-text {
+            display: none;
+        }
+        .sidebar.collapsed .logo-text {
+            display: none;
+        }
+        .sidebar.collapsed .menu-item {
+            justify-content: center;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div id="loginPage" class="min-h-screen flex items-center justify-center bg-gray-50">
+        <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold text-blue-600">Seekly Admin</h1>
+                <p class="text-gray-500">Sign in to your admin account</p>
+            </div>
+            
+            <form id="loginForm" class="space-y-6">
+                <div>
+                    <label for="loginEmail" class="block text-sm font-medium text-gray-700">Email</label>
+                    <input type="email" id="loginEmail" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                
+                <div>
+                    <label for="loginPassword" class="block text-sm font-medium text-gray-700">Password</label>
+                    <input type="password" id="loginPassword" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                
+                <div>
+                    <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        Sign In
+                    </button>
+                </div>
+                
+                <div class="text-center text-sm">
+                    <p class="text-gray-600">Don't have an account? <a href="#" id="showSignup" class="text-blue-600 hover:text-blue-500">Sign up</a></p>
+                </div>
+            </form>
+            
+            <form id="signupForm" class="space-y-6 hidden">
+                <div>
+                    <label for="signupEmail" class="block text-sm font-medium text-gray-700">Email</label>
+                    <input type="email" id="signupEmail" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                
+                <div>
+                    <label for="signupPassword" class="block text-sm font-medium text-gray-700">Password</label>
+                    <input type="password" id="signupPassword" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                
+                <div>
+                    <label for="signupConfirmPassword" class="block text-sm font-medium text-gray-700">Confirm Password</label>
+                    <input type="password" id="signupConfirmPassword" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                
+                <div>
+                    <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        Sign Up
+                    </button>
+                </div>
+                
+                <div class="text-center text-sm">
+                    <p class="text-gray-600">Already have an account? <a href="#" id="showLogin" class="text-blue-600 hover:text-blue-500">Sign in</a></p>
+                </div>
+            </form>
+            
+            <div id="loginError" class="mt-4 text-center text-sm text-red-600 hidden"></div>
+        </div>
+    </div>
+    
+    <div id="adminPanel" class="hidden">
+        <div class="flex h-screen">
+            <div id="sidebar" class="sidebar bg-blue-800 text-white flex flex-col fixed h-full">
+                <div class="p-4 flex items-center space-x-3 border-b border-blue-700">
+                    <i class="fas fa-search text-2xl"></i>
+                    <span class="logo-text text-xl font-bold">Seekly Admin</span>
+                </div>
+                
+                <div class="p-4 space-y-2 flex-grow">
+                    <a href="#" class="menu-item flex items-center space-x-3 p-3 rounded hover:bg-blue-700 active" data-page="dashboard">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span class="menu-text">Dashboard</span>
+                    </a>
+                    <a href="#" class="menu-item flex items-center space-x-3 p-3 rounded hover:bg-blue-700" data-page="websites">
+                        <i class="fas fa-globe"></i>
+                        <span class="menu-text">Websites</span>
+                    </a>
+                    <a href="#" class="menu-item flex items-center space-x-3 p-3 rounded hover:bg-blue-700" data-page="submissions">
+                        <i class="fas fa-inbox"></i>
+                        <span class="menu-text">Submissions</span>
+                    </a>
+                    <a href="#" class="menu-item flex items-center space-x-3 p-3 rounded hover:bg-blue-700" data-page="promotions">
+                        <i class="fas fa-ad"></i>
+                        <span class="menu-text">Promotions</span>
+                    </a>
+                    <a href="#" class="menu-item flex items-center space-x-3 p-3 rounded hover:bg-blue-700" data-page="analytics">
+                        <i class="fas fa-chart-line"></i>
+                        <span class="menu-text">Analytics</span>
+                    </a>
+                    <a href="#" class="menu-item flex items-center space-x-3 p-3 rounded hover:bg-blue-700" data-page="settings">
+                        <i class="fas fa-cog"></i>
+                        <span class="menu-text">Settings</span>
+                    </a>
+                </div>
+                
+                <div class="p-4 border-t border-blue-700">
+                    <button id="toggleSidebar" class="menu-item flex items-center space-x-3 p-3 rounded hover:bg-blue-700 w-full">
+                        <i class="fas fa-chevron-left"></i>
+                        <span class="menu-text">Collapse</span>
+                    </button>
+                    <button id="logoutBtn" class="menu-item flex items-center space-x-3 p-3 rounded hover:bg-blue-700 w-full">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span class="menu-text">Logout</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="main-content flex-grow overflow-auto">
+                <div class="p-6">
+                    <div id="dashboardPage" class="page-content">
+                        <h1 class="text-2xl font-bold mb-6">Dashboard Overview</h1>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                            <div class="bg-white p-6 rounded-lg shadow">
+                                <h3 class="text-lg font-medium text-gray-500 mb-2">Total Websites</h3>
+                                <p id="totalWebsites" class="text-3xl font-bold">0</p>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow">
+                                <h3 class="text-lg font-medium text-gray-500 mb-2">Pending Submissions</h3>
+                                <p id="pendingSubmissions" class="text-3xl font-bold">0</p>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow">
+                                <h3 class="text-lg font-medium text-gray-500 mb-2">Active Promotions</h3>
+                                <p id="activePromotions" class="text-3xl font-bold">0</p>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white p-6 rounded-lg shadow mb-8">
+                            <h3 class="text-lg font-medium mb-4">Recent Activity</h3>
+                            <div id="recentActivity" class="space-y-4">
+                                <div class="flex justify-center items-center py-8">
+                                    <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="websitesPage" class="page-content hidden">
+                        <div class="flex justify-between items-center mb-6">
+                            <h1 class="text-2xl font-bold">Websites</h1>
+                            <div class="flex space-x-4">
+                                <input type="text" id="websiteSearch" placeholder="Search websites..." class="px-4 py-2 border rounded-lg">
+                                <select id="websiteFilter" class="px-4 py-2 border rounded-lg">
+                                    <option value="all">All Websites</option>
+                                    <option value="promoted">Promoted</option>
+                                    <option value="familyFriendly">Family Friendly</option>
+                                    <option value="technology">Technology</option>
+                                    <option value="games">Games</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-lg shadow overflow-hidden">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">URL</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Visits</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="websitesTableBody" class="bg-white divide-y divide-gray-200">
+                                    <tr>
+                                        <td colspan="6" class="px-6 py-4 text-center">
+                                            <div class="flex justify-center items-center py-8">
+                                                <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="mt-4 flex justify-between items-center">
+                            <div id="websitePaginationInfo" class="text-sm text-gray-500">Showing 0 of 0</div>
+                            <div class="flex space-x-2">
+                                <button id="prevWebsitePage" class="px-4 py-2 border rounded-lg bg-gray-100 disabled:opacity-50" disabled>Previous</button>
+                                <button id="nextWebsitePage" class="px-4 py-2 border rounded-lg bg-gray-100 disabled:opacity-50" disabled>Next</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="submissionsPage" class="page-content hidden">
+                        <h1 class="text-2xl font-bold mb-6">Website Submissions</h1>
+                        
+                        <div class="bg-white rounded-lg shadow overflow-hidden mb-6">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Website</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Submitter</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="submissionsTableBody" class="bg-white divide-y divide-gray-200">
+                                    <tr>
+                                        <td colspan="5" class="px-6 py-4 text-center">
+                                            <div class="flex justify-center items-center py-8">
+                                                <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div id="promotionsPage" class="page-content hidden">
+                        <div class="flex justify-between items-center mb-6">
+                            <h1 class="text-2xl font-bold">Promotions</h1>
+                            <button id="addPromotionBtn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Add Promotion</button>
+                        </div>
+                        
+                        <div class="bg-white rounded-lg shadow overflow-hidden">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Website</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start Date</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">End Date</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Visits Goal</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="promotionsTableBody" class="bg-white divide-y divide-gray-200">
+                                    <tr>
+                                        <td colspan="6" class="px-6 py-4 text-center">
+                                            <div class="flex justify-center items-center py-8">
+                                                <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div id="analyticsPage" class="page-content hidden">
+                        <h1 class="text-2xl font-bold mb-6">Analytics</h1>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                            <div class="bg-white p-6 rounded-lg shadow">
+                                <h3 class="text-lg font-medium mb-4">Total Visits</h3>
+                                <div id="totalVisitsChart" class="h-64"></div>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow">
+                                <h3 class="text-lg font-medium mb-4">Top Websites</h3>
+                                <div id="topWebsitesChart" class="h-64"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white p-6 rounded-lg shadow mb-6">
+                            <h3 class="text-lg font-medium mb-4">Recent Visits</h3>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">IP</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Device</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Browser</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="recentVisitsTableBody" class="bg-white divide-y divide-gray-200">
+                                        <tr>
+                                            <td colspan="4" class="px-6 py-4 text-center">
+                                                <div class="flex justify-center items-center py-8">
+                                                    <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="settingsPage" class="page-content hidden">
+                        <h1 class="text-2xl font-bold mb-6">Settings</h1>
+                        
+                        <div class="bg-white p-6 rounded-lg shadow mb-6">
+                            <h3 class="text-lg font-medium mb-4">Maintenance Mode</h3>
+                            <div class="flex items-center space-x-4">
+                                <label class="flex items-center">
+                                    <input type="checkbox" id="maintenanceMode" class="form-checkbox h-5 w-5 text-blue-600">
+                                    <span class="ml-2">Enable Maintenance Mode</span>
+                                </label>
+                            </div>
+                            
+                            <div id="maintenanceMessageContainer" class="mt-4 hidden">
+                                <label for="maintenanceMessage" class="block text-sm font-medium text-gray-700">Message</label>
+                                <textarea id="maintenanceMessage" rows="3" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"></textarea>
+                                <button id="saveMaintenance" class="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Save</button>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white p-6 rounded-lg shadow">
+                            <h3 class="text-lg font-medium mb-4">Admin Users</h3>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Login</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="adminUsersTableBody" class="bg-white divide-y divide-gray-200">
+                                        <tr>
+                                            <td colspan="3" class="px-6 py-4 text-center">
+                                                <div class="flex justify-center items-center py-8">
+                                                    <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="promotionModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div class="p-6">
+                <h2 class="text-xl font-bold mb-4">Add Promotion</h2>
+                <form id="promotionForm" class="space-y-4">
+                    <div>
+                        <label for="promotionWebsite" class="block text-sm font-medium text-gray-700">Website</label>
+                        <select id="promotionWebsite" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Select a website</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="promotionStartDate" class="block text-sm font-medium text-gray-700">Start Date</label>
+                        <input type="date" id="promotionStartDate" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="promotionEndDate" class="block text-sm font-medium text-gray-700">End Date</label>
+                        <input type="date" id="promotionEndDate" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="promotionVisitsGoal" class="block text-sm font-medium text-gray-700">Visits Goal</label>
+                        <input type="number" id="promotionVisitsGoal" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div class="flex justify-end space-x-4">
+                        <button type="button" id="cancelPromotion" class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            Save Promotion
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div id="websiteModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl">
+            <div class="p-6">
+                <h2 class="text-xl font-bold mb-4">Website Details</h2>
+                <div id="websiteDetails" class="space-y-4">
+                    <div class="flex justify-center items-center py-12">
+                        <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end">
+                    <button id="closeWebsiteModal" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const firebaseConfig = {
+            apiKey: "API",
+            authDomain: "AUTH",
+            databaseURL: "DATABASEURL",
+            projectId: "PR_ID",
+            storageBucket: "BUCKET",
+            messagingSenderId: "SENDERID",
+            appId: "AppID",
+            measurementId: "Me_ID"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const database = firebase.database();
+        
+         
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuthState();
+            setupEventListeners();
+        });
+
+        function checkAuthState() {
+            auth.onAuthStateChanged(user => {
+                if (user) {
+                    document.getElementById('loginPage').classList.add('hidden');
+                    document.getElementById('adminPanel').classList.remove('hidden');
+                    loadDashboardData();
+                } else {
+                    document.getElementById('loginPage').classList.remove('hidden');
+                    document.getElementById('adminPanel').classList.add('hidden');
+                }
+            });
+        }
+
+        function setupEventListeners() {
+            document.getElementById('showSignup').addEventListener('click', function(e) {
+                e.preventDefault();
+                document.getElementById('loginForm').classList.add('hidden');
+                document.getElementById('signupForm').classList.remove('hidden');
+                document.getElementById('loginError').classList.add('hidden');
+            });
+
+            document.getElementById('showLogin').addEventListener('click', function(e) {
+                e.preventDefault();
+                document.getElementById('signupForm').classList.add('hidden');
+                document.getElementById('loginForm').classList.remove('hidden');
+                document.getElementById('loginError').classList.add('hidden');
+            });
+
+            document.getElementById('loginForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const email = document.getElementById('loginEmail').value;
+                const password = document.getElementById('loginPassword').value;
+                
+                auth.signInWithEmailAndPassword(email, password)
+                    .catch(error => {
+                        document.getElementById('loginError').textContent = error.message;
+                        document.getElementById('loginError').classList.remove('hidden');
+                    });
+            });
+
+            document.getElementById('signupForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const email = document.getElementById('signupEmail').value;
+                const password = document.getElementById('signupPassword').value;
+                const confirmPassword = document.getElementById('signupConfirmPassword').value;
+                
+                if (password !== confirmPassword) {
+                    document.getElementById('loginError').textContent = "Passwords don't match";
+                    document.getElementById('loginError').classList.remove('hidden');
+                    return;
+                }
+                
+                auth.createUserWithEmailAndPassword(email, password)
+                    .then(() => {
+                        return database.ref('adminUsers').push({
+                            email,
+                            createdAt: firebase.database.ServerValue.TIMESTAMP,
+                            lastLogin: firebase.database.ServerValue.TIMESTAMP
+                        });
+                    })
+                    .catch(error => {
+                        document.getElementById('loginError').textContent = error.message;
+                        document.getElementById('loginError').classList.remove('hidden');
+                    });
+            });
+
+            document.getElementById('logoutBtn').addEventListener('click', function() {
+                auth.signOut();
+            });
+
+            document.getElementById('toggleSidebar').addEventListener('click', function() {
+                document.getElementById('sidebar').classList.toggle('collapsed');
+            });
+
+            document.querySelectorAll('.menu-item[data-page]').forEach(item => {
+                item.addEventListener('click', function() {
+                    const page = this.getAttribute('data-page');
+                    showPage(page);
+                    
+                    document.querySelectorAll('.menu-item[data-page]').forEach(i => {
+                        i.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                });
+            });
+
+            document.getElementById('addPromotionBtn').addEventListener('click', showPromotionModal);
+            document.getElementById('cancelPromotion').addEventListener('click', hidePromotionModal);
+            document.getElementById('promotionForm').addEventListener('submit', savePromotion);
+            document.getElementById('closeWebsiteModal').addEventListener('click', hideWebsiteModal);
+            document.getElementById('maintenanceMode').addEventListener('change', toggleMaintenanceMode);
+            document.getElementById('saveMaintenance').addEventListener('click', saveMaintenanceSettings);
+            document.getElementById('websiteSearch').addEventListener('input', filterWebsites);
+            document.getElementById('websiteFilter').addEventListener('change', filterWebsites);
+            document.getElementById('prevWebsitePage').addEventListener('click', prevWebsitePage);
+            document.getElementById('nextWebsitePage').addEventListener('click', nextWebsitePage);
+        }
+
+        function showPage(page) {
+            document.querySelectorAll('.page-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            document.getElementById(`${page}Page`).classList.remove('hidden');
+            
+            switch(page) {
+                case 'dashboard':
+                    loadDashboardData();
+                    break;
+                case 'websites':
+                    loadWebsites();
+                    break;
+                case 'submissions':
+                    loadSubmissions();
+                    break;
+                case 'promotions':
+                    loadPromotions();
+                    break;
+                case 'analytics':
+                    loadAnalytics();
+                    break;
+                case 'settings':
+                    loadSettings();
+                    break;
+            }
+        }
+
+        function loadDashboardData() {
+            database.ref('websites').once('value', snapshot => {
+                document.getElementById('totalWebsites').textContent = snapshot.numChildren();
+            });
+            
+            database.ref('websiteSubmissions').orderByChild('status').equalTo('pending').once('value', snapshot => {
+                document.getElementById('pendingSubmissions').textContent = snapshot.numChildren();
+            });
+            
+            database.ref('promotions').orderByChild('status').equalTo('active').once('value', snapshot => {
+                document.getElementById('activePromotions').textContent = snapshot.numChildren();
+            });
+            
+            database.ref('websiteClicks').limitToLast(5).once('value', snapshot => {
+                const activityContainer = document.getElementById('recentActivity');
+                activityContainer.innerHTML = '';
+                
+                snapshot.forEach(childSnapshot => {
+                    const click = childSnapshot.val();
+                    const date = new Date(click.clickTime).toLocaleString();
+                    
+                    const activityItem = document.createElement('div');
+                    activityItem.className = 'flex items-start';
+                    activityItem.innerHTML = `
+                        <div class="flex-shrink-0 bg-blue-100 p-2 rounded-full">
+                            <i class="fas fa-mouse-pointer text-blue-600"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm font-medium">${click.websiteUrl}</p>
+                            <p class="text-sm text-gray-500">Clicked on ${date}</p>
+                        </div>
+                    `;
+                    activityContainer.appendChild(activityItem);
+                });
+            });
+        }
+
+        function loadWebsites(page = 1, searchTerm = '', filter = 'all') {
+            const websitesContainer = document.getElementById('websitesTableBody');
+            websitesContainer.innerHTML = '<tr><td colspan="6" class="px-6 py-4 text-center"><div class="flex justify-center items-center py-8"><div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div></div></td></tr>';
+            
+            let websitesQuery = database.ref('websites');
+            
+            websitesQuery.once('value', snapshot => {
+                let websites = [];
+                snapshot.forEach(childSnapshot => {
+                    const website = childSnapshot.val();
+                    website.key = childSnapshot.key;
+                    websites.push(website);
+                });
+                
+                if (searchTerm) {
+                    const term = searchTerm.toLowerCase();
+                    websites = websites.filter(w => 
+                        w.name.toLowerCase().includes(term) || 
+                        w.url.toLowerCase().includes(term) ||
+                        (w.tags && w.tags.toLowerCase().includes(term))
+                    );
+                }
+                
+                if (filter !== 'all') {
+                    if (filter === 'promoted') {
+                        websites = websites.filter(w => w.isPromoted);
+                    } else if (filter === 'familyFriendly') {
+                        websites = websites.filter(w => w.isFamilyFriendly);
+                    } else {
+                        websites = websites.filter(w => w.type === filter);
+                    }
+                }
+                
+                const startIndex = (page - 1) * 10;
+                const paginatedWebsites = websites.slice(startIndex, startIndex + 10);
+                
+                displayWebsites(paginatedWebsites);
+                updateWebsitePagination(page, websites.length);
+            });
+        }
+
+        function displayWebsites(websites) {
+            const websitesContainer = document.getElementById('websitesTableBody');
+            websitesContainer.innerHTML = '';
+            
+            if (websites.length === 0) {
+                websitesContainer.innerHTML = '<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">No websites found</td></tr>';
+                return;
+            }
+            
+            websites.forEach(website => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50';
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 h-10 w-10">
+                                <img class="h-10 w-10 rounded-full" src="${website.icon || 'https://via.placeholder.com/40'}" alt="${website.name}">
+                            </div>
+                            <div class="ml-4">
+                                <div class="text-sm font-medium text-gray-900">${website.name}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-500">${website.url.replace(/^https?:\/\//, '')}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">${website.type || 'Other'}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${website.visits || 0}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${website.status === 'approved' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">${website.status}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button class="text-blue-600 hover:text-blue-900 view-website" data-id="${website.key}">View</button>
+                        <button class="ml-2 text-red-600 hover:text-red-900 delete-website" data-id="${website.key}">Delete</button>
+                    </td>
+                `;
+                websitesContainer.appendChild(row);
+            });
+            
+            document.querySelectorAll('.view-website').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    showWebsiteDetails(this.getAttribute('data-id'));
+                });
+            });
+            
+            document.querySelectorAll('.delete-website').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    if (confirm('Are you sure you want to delete this website?')) {
+                        deleteWebsite(this.getAttribute('data-id'));
+                    }
+                });
+            });
+        }
+
+        function updateWebsitePagination(currentPage, totalItems) {
+            const totalPages = Math.ceil(totalItems / 10);
+            document.getElementById('websitePaginationInfo').textContent = `Showing ${Math.min(currentPage * 10, totalItems)} of ${totalItems}`;
+            
+            document.getElementById('prevWebsitePage').disabled = currentPage === 1;
+            document.getElementById('nextWebsitePage').disabled = currentPage >= totalPages;
+        }
+
+        function prevWebsitePage() {
+            const currentPage = parseInt(document.getElementById('websitePaginationInfo').textContent.match(/Showing (\d+)/)[1] / 10);
+            const searchTerm = document.getElementById('websiteSearch').value;
+            const filter = document.getElementById('websiteFilter').value;
+            loadWebsites(currentPage - 1, searchTerm, filter);
+        }
+
+        function nextWebsitePage() {
+            const currentPage = parseInt(document.getElementById('websitePaginationInfo').textContent.match(/Showing (\d+)/)[1] / 10);
+            const searchTerm = document.getElementById('websiteSearch').value;
+            const filter = document.getElementById('websiteFilter').value;
+            loadWebsites(currentPage + 1, searchTerm, filter);
+        }
+
+        function filterWebsites() {
+            const searchTerm = document.getElementById('websiteSearch').value;
+            const filter = document.getElementById('websiteFilter').value;
+            loadWebsites(1, searchTerm, filter);
+        }
+
+        function loadSubmissions() {
+            const submissionsContainer = document.getElementById('submissionsTableBody');
+            submissionsContainer.innerHTML = '<tr><td colspan="5" class="px-6 py-4 text-center"><div class="flex justify-center items-center py-8"><div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div></div></td></tr>';
+            
+            database.ref('websiteSubmissions').orderByChild('status').equalTo('pending').once('value', snapshot => {
+                submissionsContainer.innerHTML = '';
+                
+                if (snapshot.numChildren() === 0) {
+                    submissionsContainer.innerHTML = '<tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">No pending submissions</td></tr>';
+                    return;
+                }
+                
+                snapshot.forEach(childSnapshot => {
+                    const submission = childSnapshot.val();
+                    submission.key = childSnapshot.key;
+                    const date = new Date(submission.createdAt).toLocaleDateString();
+                    
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-gray-50';
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 h-10 w-10">
+                                    <img class="h-10 w-10 rounded-full" src="${submission.icon || 'https://via.placeholder.com/40'}" alt="${submission.name}">
+                                </div>
+                                <div class="ml-4">
+                                    <div class="text-sm font-medium text-gray-900">${submission.name}</div>
+                                    <div class="text-sm text-gray-500">${submission.url.replace(/^https?:\/\//, '')}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">${submission.submitterName}</div>
+                            <div class="text-sm text-gray-500">${submission.submitterEmail}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">${submission.type || 'Other'}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${date}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <button class="text-green-600 hover:text-green-900 approve-submission" data-id="${submission.key}">Approve</button>
+                            <button class="ml-2 text-red-600 hover:text-red-900 reject-submission" data-id="${submission.key}">Reject</button>
+                        </td>
+                    `;
+                    submissionsContainer.appendChild(row);
+                });
+                
+                document.querySelectorAll('.approve-submission').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        approveSubmission(this.getAttribute('data-id'), true);
+                    });
+                });
+                
+                document.querySelectorAll('.reject-submission').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        approveSubmission(this.getAttribute('data-id'), false);
+                    });
+                });
+            });
+        }
+
+        function approveSubmission(submissionId, approve) {
+            database.ref(`websiteSubmissions/${submissionId}`).once('value', snapshot => {
+                const submission = snapshot.val();
+                
+                if (approve) {
+                    const { url, name, image, icon, type, tags, isFamilyFriendly } = submission;
+                    const websiteData = {
+                        url,
+                        name,
+                        image,
+                        icon,
+                        type,
+                        tags,
+                        isFamilyFriendly,
+                        visits: 0,
+                        status: 'approved',
+                        createdAt: submission.createdAt
+                    };
+                    
+                    database.ref('websites').push(websiteData)
+                        .then(() => {
+                            database.ref(`websiteSubmissions/${submissionId}`).update({ status: 'approved' });
+                            loadSubmissions();
+                        });
+                } else {
+                    database.ref(`websiteSubmissions/${submissionId}`).update({ status: 'rejected' });
+                    loadSubmissions();
+                }
+            });
+        }
+
+        function loadPromotions() {
+            const promotionsContainer = document.getElementById('promotionsTableBody');
+            promotionsContainer.innerHTML = '<tr><td colspan="6" class="px-6 py-4 text-center"><div class="flex justify-center items-center py-8"><div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div></div></td></tr>';
+            
+            database.ref('promotions').once('value', snapshot => {
+                promotionsContainer.innerHTML = '';
+                
+                if (snapshot.numChildren() === 0) {
+                    promotionsContainer.innerHTML = '<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">No promotions found</td></tr>';
+                    return;
+                }
+                
+                const websitePromises = [];
+                
+                snapshot.forEach(childSnapshot => {
+                    const promotion = childSnapshot.val();
+                    promotion.key = childSnapshot.key;
+                    
+                    const websitePromise = database.ref(`websites/${promotion.websiteId}`).once('value')
+                        .then(websiteSnapshot => {
+                            promotion.website = websiteSnapshot.val();
+                            return promotion;
+                        });
+                    
+                    websitePromises.push(websitePromise);
+                });
+                
+                Promise.all(websitePromises).then(promotions => {
+                    promotions.forEach(promotion => {
+                        const startDate = new Date(promotion.startDate).toLocaleDateString();
+                        const endDate = promotion.endDate ? new Date(promotion.endDate).toLocaleDateString() : 'None';
+                        
+                        const row = document.createElement('tr');
+                        row.className = 'hover:bg-gray-50';
+                        row.innerHTML = `
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 h-10 w-10">
+                                        <img class="h-10 w-10 rounded-full" src="${promotion.website.icon || 'https://via.placeholder.com/40'}" alt="${promotion.website.name}">
+                                    </div>
+                                    <div class="ml-4">
+                                        <div class="text-sm font-medium text-gray-900">${promotion.website.name}</div>
+                                        <div class="text-sm text-gray-500">${promotion.website.url.replace(/^https?:\/\//, '')}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${startDate}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${endDate}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${promotion.visitsGoal}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${promotion.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">${promotion.status}</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <button class="text-blue-600 hover:text-blue-900 edit-promotion" data-id="${promotion.key}">Edit</button>
+                                <button class="ml-2 text-red-600 hover:text-red-900 delete-promotion" data-id="${promotion.key}">Delete</button>
+                            </td>
+                        `;
+                        promotionsContainer.appendChild(row);
+                    });
+                    
+                    document.querySelectorAll('.edit-promotion').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            editPromotion(this.getAttribute('data-id'));
+                        });
+                    });
+                    
+                    document.querySelectorAll('.delete-promotion').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            if (confirm('Are you sure you want to delete this promotion?')) {
+                                deletePromotion(this.getAttribute('data-id'));
+                            }
+                        });
+                    });
+                });
+            });
+        }
+
+        function showPromotionModal() {
+            const websiteSelect = document.getElementById('promotionWebsite');
+            websiteSelect.innerHTML = '<option value="">Select a website</option>';
+            
+            database.ref('websites').once('value', snapshot => {
+                snapshot.forEach(childSnapshot => {
+                    const website = childSnapshot.val();
+                    const option = document.createElement('option');
+                    option.value = childSnapshot.key;
+                    option.textContent = website.name;
+                    websiteSelect.appendChild(option);
+                });
+            });
+            
+            document.getElementById('promotionModal').classList.remove('hidden');
+        }
+
+        function hidePromotionModal() {
+            document.getElementById('promotionModal').classList.add('hidden');
+            document.getElementById('promotionForm').reset();
+        }
+
+        function savePromotion(e) {
+            e.preventDefault();
+            
+            const websiteId = document.getElementById('promotionWebsite').value;
+            const startDate = document.getElementById('promotionStartDate').value;
+            const endDate = document.getElementById('promotionEndDate').value;
+            const visitsGoal = document.getElementById('promotionVisitsGoal').value;
+            
+            const promotionData = {
+                websiteId,
+                startDate,
+                visitsGoal: parseInt(visitsGoal),
+                status: 'active',
+                createdAt: firebase.database.ServerValue.TIMESTAMP
+            };
+            
+            if (endDate) {
+                promotionData.endDate = endDate;
+            }
+            
+            database.ref('promotions').push(promotionData)
+                .then(() => {
+                    hidePromotionModal();
+                    loadPromotions();
+                })
+                .catch(error => {
+                    alert('Error saving promotion: ' + error.message);
+                });
+        }
+
+        function editPromotion(promotionId) {
+            database.ref(`promotions/${promotionId}`).once('value', snapshot => {
+                const promotion = snapshot.val();
+                
+                const websiteSelect = document.getElementById('promotionWebsite');
+                websiteSelect.innerHTML = '<option value="">Select a website</option>';
+                
+                database.ref('websites').once('value', websitesSnapshot => {
+                    websitesSnapshot.forEach(childSnapshot => {
+                        const website = childSnapshot.val();
+                        const option = document.createElement('option');
+                        option.value = childSnapshot.key;
+                        option.textContent = website.name;
+                        option.selected = childSnapshot.key === promotion.websiteId;
+                        websiteSelect.appendChild(option);
+                    });
+                    
+                    document.getElementById('promotionStartDate').value = promotion.startDate;
+                    document.getElementById('promotionEndDate').value = promotion.endDate || '';
+                    document.getElementById('promotionVisitsGoal').value = promotion.visitsGoal;
+                    
+                    document.getElementById('promotionForm').dataset.id = promotionId;
+                    document.getElementById('promotionModal').classList.remove('hidden');
+                });
+            });
+        }
+
+        function deletePromotion(promotionId) {
+            database.ref(`promotions/${promotionId}`).remove()
+                .then(() => {
+                    loadPromotions();
+                });
+        }
+
+        function loadAnalytics() {
+            loadRecentVisits();
+        }
+
+        function loadRecentVisits() {
+            const visitsContainer = document.getElementById('recentVisitsTableBody');
+            visitsContainer.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center"><div class="flex justify-center items-center py-8"><div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div></div></td></tr>';
+            
+            database.ref('visits').limitToLast(10).once('value', snapshot => {
+                visitsContainer.innerHTML = '';
+                
+                if (snapshot.numChildren() === 0) {
+                    visitsContainer.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">No visits recorded</td></tr>';
+                    return;
+                }
+                
+                const visits = [];
+                snapshot.forEach(childSnapshot => {
+                    visits.push(childSnapshot.val());
+                });
+                
+                visits.reverse().forEach(visit => {
+                    const date = new Date(visit.visitTime).toLocaleString();
+                    const deviceType = visit.device.type || 'Unknown';
+                    const isMobile = visit.device.isMobile ? 'Mobile' : visit.device.isTablet ? 'Tablet' : 'Desktop';
+                    
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-gray-50';
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${visit.ip}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${deviceType} (${isMobile})</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${visit.device.browser || 'Unknown'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${date}</td>
+                    `;
+                    visitsContainer.appendChild(row);
+                });
+            });
+        }
+
+        function loadSettings() {
+            database.ref('maintenance').once('value', snapshot => {
+                const maintenance = snapshot.val();
+                if (maintenance) {
+                    document.getElementById('maintenanceMode').checked = maintenance.enabled;
+                    document.getElementById('maintenanceMessage').value = maintenance.message || '';
+                    document.getElementById('maintenanceMessageContainer').classList.toggle('hidden', !maintenance.enabled);
+                }
+            });
+            
+            database.ref('adminUsers').once('value', snapshot => {
+                const usersContainer = document.getElementById('adminUsersTableBody');
+                usersContainer.innerHTML = '';
+                
+                if (snapshot.numChildren() === 0) {
+                    usersContainer.innerHTML = '<tr><td colspan="3" class="px-6 py-4 text-center text-gray-500">No admin users found</td></tr>';
+                    return;
+                }
+                
+                snapshot.forEach(childSnapshot => {
+                    const user = childSnapshot.val();
+                    const lastLogin = user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'Never';
+                    
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-gray-50';
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.email}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${lastLogin}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <button class="text-red-600 hover:text-red-900 delete-user" data-id="${childSnapshot.key}">Delete</button>
+                        </td>
+                    `;
+                    usersContainer.appendChild(row);
+                });
+                
+                document.querySelectorAll('.delete-user').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        if (confirm('Are you sure you want to delete this admin user?')) {
+                            database.ref(`adminUsers/${this.getAttribute('data-id')}`).remove();
+                        }
+                    });
+                });
+            });
+        }
+
+        function toggleMaintenanceMode() {
+            const enabled = document.getElementById('maintenanceMode').checked;
+            document.getElementById('maintenanceMessageContainer').classList.toggle('hidden', !enabled);
+        }
+
+        function saveMaintenanceSettings() {
+            const enabled = document.getElementById('maintenanceMode').checked;
+            const message = document.getElementById('maintenanceMessage').value;
+            
+            database.ref('maintenance').set({
+                enabled,
+                message
+            }).then(() => {
+                alert('Maintenance settings saved successfully');
+            });
+        }
+
+        function showWebsiteDetails(websiteId) {
+            database.ref(`websites/${websiteId}`).once('value', snapshot => {
+                const website = snapshot.val();
+                const detailsContainer = document.getElementById('websiteDetails');
+                
+                detailsContainer.innerHTML = `
+                    <div class="flex flex-col md:flex-row gap-6">
+                        <div class="md:w-1/3">
+                            <div class="bg-gray-100 rounded-lg p-4 flex justify-center items-center">
+                                <img src="${website.icon || 'https://via.placeholder.com/150'}" alt="${website.name}" class="h-32 w-32 object-contain">
+                            </div>
+                            <div class="mt-4">
+                                <h3 class="text-lg font-medium">${website.name}</h3>
+                                <p class="text-sm text-gray-500">${website.url}</p>
+                                <div class="mt-2">
+                                    <span class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">${website.type || 'Other'}</span>
+                                    ${website.isFamilyFriendly ? '<span class="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded ml-1">Family Friendly</span>' : ''}
+                                    ${website.isPromoted ? '<span class="inline-block bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded ml-1">Promoted</span>' : ''}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="md:w-2/3">
+                            <div class="grid grid-cols-2 gap-4 mb-6">
+                                <div class="bg-gray-50 p-4 rounded-lg">
+                                    <h4 class="text-sm font-medium text-gray-500">Total Visits</h4>
+                                    <p class="text-2xl font-bold">${website.visits || 0}</p>
+                                </div>
+                                <div class="bg-gray-50 p-4 rounded-lg">
+                                    <h4 class="text-sm font-medium text-gray-500">Monthly Visits</h4>
+                                    <p class="text-2xl font-bold">${website.monthlyVisits || 0}</p>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <h4 class="text-sm font-medium text-gray-500 mb-2">Tags</h4>
+                                <div class="flex flex-wrap gap-2">
+                                    ${website.tags ? website.tags.split(',').map(tag => 
+                                        `<span class="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">${tag.trim()}</span>`
+                                    ).join('') : ''}
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <h4 class="text-sm font-medium text-gray-500 mb-2">Actions</h4>
+                                <div class="flex space-x-4">
+                                    <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700" id="promoteWebsiteBtn" data-id="${websiteId}">
+                                        ${website.isPromoted ? 'Demote' : 'Promote'}
+                                    </button>
+                                    <button class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700" id="deleteWebsiteBtn" data-id="${websiteId}">
+                                        Delete
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('promoteWebsiteBtn').addEventListener('click', function() {
+                    togglePromotion(this.getAttribute('data-id'), !website.isPromoted);
+                });
+                
+                document.getElementById('deleteWebsiteBtn').addEventListener('click', function() {
+                    if (confirm('Are you sure you want to delete this website?')) {
+                        deleteWebsite(this.getAttribute('data-id'));
+                    }
+                });
+                
+                document.getElementById('websiteModal').classList.remove('hidden');
+            });
+        }
+        
+        
+
+        function hideWebsiteModal() {
+            document.getElementById('websiteModal').classList.add('hidden');
+        }
+
+        function togglePromotion(websiteId, promote) {
+            database.ref(`websites/${websiteId}/isPromoted`).set(promote)
+                .then(() => {
+                    hideWebsiteModal();
+                    loadWebsites();
+                });
+        }
+
+        function deleteWebsite(websiteId) {
+            database.ref(`websites/${websiteId}`).remove()
+                .then(() => {
+                    hideWebsiteModal();
+                    loadWebsites();
+                });
+        }
+        
+              
+   //Contact me
+   //Website: georg-michelle.ct.ws
+   //instagram: h1xzblu
+   //WeChat ID: wxid_2aa15bz1369r22
+   //Discord: @shadowDevv
+   //Telegram: @Addmepleasenow
+   
+        
+    </script>
+</body>
+</html>
